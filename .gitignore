@@ -1,0 +1,24 @@
+# Operating system files
+.DS_Store
+
+# Environment variables
+.env
+.env.*
+
+# Dependency folders
+node_modules/
+venv/
+.venv/
+
+# Build and cache output
+dist/
+build/
+__pycache__/
+.pytest_cache/
+
+# Local runtime data
+*.db
+*.sqlite
+*.sqlite3
+backend/chroma/
+backend/uploads/
