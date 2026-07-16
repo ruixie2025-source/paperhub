@@ -4,6 +4,8 @@
 # Environment variables
 .env
 .env.*
+!.env.example
+.envrc
 
 # Dependency folders
 node_modules/
@@ -14,11 +16,46 @@ venv/
 dist/
 build/
 __pycache__/
+*.py[cod]
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
+cache/
+tmp/
+coverage/
+.coverage
+htmlcov/
 
 # Local runtime data
 *.db
 *.sqlite
 *.sqlite3
+database/*.db
+uploads/
+**/uploads/
+chroma/
+**/chroma/
+sqlite/
+**/sqlite/
 backend/chroma/
 backend/uploads/
+backend/logs/
+backend/model-cache/
+
+# Local editor settings and runtime secrets
+.vscode/
+.idea/
+logs/
+*.log
+secrets/
+credentials/
+certs/
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.htpasswd
+id_rsa
+id_ed25519

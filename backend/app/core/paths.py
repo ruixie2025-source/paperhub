@@ -1,7 +1,9 @@
-from pathlib import Path
+from app.core.config import BACKEND_DIR, get_settings
 
 
-BACKEND_DIR = Path(__file__).resolve().parents[2]
-DATABASE_PATH = BACKEND_DIR / "paperhub.db"
-UPLOAD_DIR = BACKEND_DIR / "uploads"
-CHROMA_DIR = BACKEND_DIR / "chroma"
+settings = get_settings()
+
+DATABASE_PATH = settings.resolve_path(settings.database_path)
+UPLOAD_DIR = settings.resolve_path(settings.upload_dir)
+CHROMA_DIR = settings.resolve_path(settings.chroma_dir)
+MODEL_CACHE_DIR = settings.resolve_path(settings.model_cache_dir)

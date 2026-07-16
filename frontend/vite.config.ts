@@ -1,22 +1,30 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'node:path'
 
-// https://vite.dev/config/
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
-  server: {
-    proxy: {
-      '/chat': 'http://127.0.0.1:8000',
-      '/files': 'http://127.0.0.1:8000',
-      '/paper-analyses': 'http://127.0.0.1:8000',
-      '/papers': 'http://127.0.0.1:8000',
+export default defineConfig(({ mode }) => {
+  const envDir = path.resolve(__dirname, '..')
+  const env = loadEnv(mode, envDir, '')
+  const apiTarget = env.VITE_DEV_API_TARGET
+
+  return {
+    envDir,
+    plugins: [react(), tailwindcss()],
+    server: apiTarget
+      ? {
+          proxy: {
+            '/chat': apiTarget,
+            '/files': apiTarget,
+            '/paper-analyses': apiTarget,
+            '/papers': apiTarget,
+          },
+        }
+      : undefined,
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
+      },
     },
-  },
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
-  },
+  }
 })

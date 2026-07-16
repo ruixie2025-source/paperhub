@@ -1,7 +1,9 @@
 chromadb==1.5.9
 fastapi==0.124.4
 PyMuPDF==1.26.5
+pydantic-settings==2.11.0
 python-multipart==0.0.20
 sentence-transformers==5.1.2
+slowapi==0.1.10
 SQLAlchemy==2.0.45
 uvicorn[standard]==0.38.0
