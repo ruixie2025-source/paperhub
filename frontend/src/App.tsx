@@ -1,4 +1,15 @@
-import { FlaskConical, Plus, ShieldCheck, Trash2, Upload, X } from "lucide-react"
+import {
+  AlertCircle,
+  CheckCircle2,
+  Clock3,
+  FlaskConical,
+  LoaderCircle,
+  Plus,
+  ShieldCheck,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react"
 import { useEffect, useState, type ChangeEvent } from "react"
 import { Route, Routes } from "react-router-dom"
 
@@ -16,6 +27,7 @@ import { PaperAnalysisTable } from "@/components/PaperAnalysisTable"
 import { PaperForm } from "@/components/PaperForm"
 import { PaperList } from "@/components/PaperList"
 import { PaperToolbar } from "@/components/PaperToolbar"
+import { Badge } from "@/components/ui/badge"
 import { Button, buttonVariants } from "@/components/ui/button"
 import {
   Dialog,
@@ -24,19 +36,57 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { usePaper } from "@/hooks/usePaper"
+import { usePaper, type PaperImportStatus } from "@/hooks/usePaper"
 import { cn } from "@/lib/utils"
 import { AIChatPage } from "@/pages/AIChatPage"
 import { PaperDetail } from "@/pages/PaperDetail"
 
+function ImportStatusBadge({ status }: { status: PaperImportStatus }) {
+  if (status === "importing") {
+    return (
+      <Badge className="gap-1 bg-primary/10 text-primary">
+        <LoaderCircle className="size-3 animate-spin" />
+        解析与索引中
+      </Badge>
+    )
+  }
+
+  if (status === "success") {
+    return (
+      <Badge className="gap-1 bg-emerald-100 text-emerald-800">
+        <CheckCircle2 className="size-3" />
+        已完成
+      </Badge>
+    )
+  }
+
+  if (status === "error") {
+    return (
+      <Badge className="gap-1 bg-destructive/10 text-destructive">
+        <AlertCircle className="size-3" />
+        失败
+      </Badge>
+    )
+  }
+
+  return (
+    <Badge className="gap-1">
+      <Clock3 className="size-3" />
+      等待中
+    </Badge>
+  )
+}
+
 function PaperListPage() {
   const {
     clearError,
+    clearImportItems,
     createPaperItem,
     deletePaperItem,
     deletingPaperId,
     error,
-    importPaperItem,
+    importItems,
+    importPaperItems,
     isImporting,
     isLoading,
     isSaving,
@@ -55,6 +105,9 @@ function PaperListPage() {
   const [isCleaningAnalyses, setIsCleaningAnalyses] = useState(false)
   const [analysisError, setAnalysisError] = useState<string | null>(null)
   const [analysisMessage, setAnalysisMessage] = useState<string | null>(null)
+  const completedImportCount = importItems.filter(
+    (item) => item.status === "success" || item.status === "error",
+  ).length
 
   useEffect(() => {
     const paperIds = papers.map((paper) => paper.id)
@@ -127,13 +180,13 @@ function PaperListPage() {
   }
 
   async function handleImport(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0]
+    const files = Array.from(event.target.files ?? [])
     event.target.value = ""
-    if (!file) {
+    if (files.length === 0) {
       return
     }
 
-    await importPaperItem(file)
+    await importPaperItems(files)
   }
 
   function handleSelectionChange(paperId: number, checked: boolean) {
@@ -205,17 +258,67 @@ function PaperListPage() {
               )}
             >
               <Upload />
-              {isImporting ? "正在解析 PDF..." : "导入 PDF"}
+              {isImporting
+                ? `正在导入 ${completedImportCount}/${importItems.length}`
+                : "批量导入 PDF"}
               <input
                 accept="application/pdf,.pdf"
                 className="absolute inset-0 cursor-pointer opacity-0 disabled:cursor-not-allowed"
                 disabled={isImporting}
+                multiple
                 onChange={(event) => void handleImport(event)}
                 type="file"
               />
             </label>
           </div>
         </section>
+
+        {importItems.length > 0 ? (
+          <section
+            aria-live="polite"
+            className="rounded-lg border bg-muted/20 px-4 py-3"
+          >
+            <div className="flex items-center gap-3 border-b pb-3">
+              <div className="min-w-0 flex-1">
+                <h2 className="text-sm font-semibold">批量导入</h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {isImporting
+                    ? `已处理 ${completedImportCount}/${importItems.length} 个文件，同时处理最多 2 个。`
+                    : `本批次已处理 ${completedImportCount} 个文件。`}
+                </p>
+              </div>
+              <Button
+                aria-label="清除批量导入记录"
+                disabled={isImporting}
+                onClick={clearImportItems}
+                size="icon"
+                title="清除导入记录"
+                type="button"
+                variant="ghost"
+              >
+                <X />
+              </Button>
+            </div>
+            <div className="divide-y">
+              {importItems.map((item) => (
+                <div
+                  className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center"
+                  key={item.id}
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium" title={item.name}>
+                      {item.name}
+                    </p>
+                    {item.error ? (
+                      <p className="mt-1 text-xs text-destructive">{item.error}</p>
+                    ) : null}
+                  </div>
+                  <ImportStatusBadge status={item.status} />
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
           <section className="min-w-0 space-y-4">
