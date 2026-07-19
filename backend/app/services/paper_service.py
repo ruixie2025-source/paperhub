@@ -114,6 +114,32 @@ def update_empty_paper_metadata(
     return paper
 
 
+def replace_paper_metadata(
+    db: Session,
+    paper_id: int,
+    metadata: dict[str, object],
+) -> Paper | None:
+    paper = get_paper(db, paper_id)
+    if paper is None:
+        return None
+
+    for field in METADATA_FIELDS:
+        value = metadata.get(field)
+        if value is None:
+            continue
+
+        if isinstance(value, str):
+            value = value.strip()
+            if not value:
+                continue
+
+        setattr(paper, field, value)
+
+    db.commit()
+    db.refresh(paper)
+    return paper
+
+
 def delete_paper(db: Session, paper_id: int) -> Paper | None:
     paper = get_paper(db, paper_id)
     if paper is None:

@@ -54,6 +54,12 @@ export function getPaper(id: number): Promise<Paper> {
   return request<Paper>(`${PAPERS_ENDPOINT}/${id}`)
 }
 
+export function reextractPaperMetadata(id: number): Promise<Paper> {
+  return request<Paper>(`${PAPERS_ENDPOINT}/${id}/metadata/reextract`, {
+    method: "POST",
+  })
+}
+
 export function searchPapers(keyword: string): Promise<Paper[]> {
   const params = new URLSearchParams({ keyword })
   return request<Paper[]>(`${PAPERS_ENDPOINT}/search?${params.toString()}`)

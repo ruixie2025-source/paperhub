@@ -205,6 +205,44 @@ def get_paper(paper_id: int, db: Session = Depends(get_db)) -> PaperResponse:
     return paper
 
 
+@router.post("/{paper_id}/metadata/reextract", response_model=PaperResponse)
+@limiter.limit(settings.analysis_rate_limit)
+def reextract_paper_metadata(
+    request: Request,
+    paper_id: int,
+    db: Session = Depends(get_db),
+) -> PaperResponse:
+    existing_paper = paper_service.get_paper(db, paper_id)
+    if existing_paper is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Paper not found",
+        )
+    if not existing_paper.content or not existing_paper.content.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Paper content is not available",
+        )
+
+    metadata = extract_metadata(existing_paper.content)
+    if not any(value is not None and str(value).strip() for value in metadata.values()):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="No paper metadata could be extracted",
+        )
+
+    paper = paper_service.replace_paper_metadata(db, paper_id, metadata)
+    if paper is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Paper not found",
+        )
+
+    reindex_paper(paper)
+    logger.info("Paper metadata re-extracted paper_id=%s", paper.id)
+    return paper
+
+
 @router.post("/{paper_id}/upload", response_model=PaperResponse)
 @limiter.limit(settings.upload_rate_limit)
 def upload_paper_pdf(

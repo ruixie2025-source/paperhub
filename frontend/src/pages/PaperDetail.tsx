@@ -1,8 +1,8 @@
-import { ArrowLeft, ExternalLink, FileCheck2, Upload } from "lucide-react"
+import { ArrowLeft, ExternalLink, FileCheck2, RefreshCw, Upload } from "lucide-react"
 import { lazy, Suspense, useCallback, useEffect, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 
-import { getPaper, uploadPaperPdf } from "@/api/paper"
+import { getPaper, reextractPaperMetadata, uploadPaperPdf } from "@/api/paper"
 import type { Paper } from "@/api/paper"
 import { AppShell } from "@/components/AppShell"
 import { Badge } from "@/components/ui/badge"
@@ -39,6 +39,7 @@ function PaperDetail() {
   const [paper, setPaper] = useState<Paper | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isUploading, setIsUploading] = useState(false)
+  const [isReextracting, setIsReextracting] = useState(false)
   const [isAbstractExpanded, setIsAbstractExpanded] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -80,6 +81,22 @@ function PaperDetail() {
       setError(caughtError instanceof Error ? caughtError.message : "上传 PDF 失败")
     } finally {
       setIsUploading(false)
+    }
+  }
+
+  async function handleReextractMetadata() {
+    if (paper === null) {
+      return
+    }
+
+    setIsReextracting(true)
+    setError(null)
+    try {
+      setPaper(await reextractPaperMetadata(paper.id))
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : "重新识别元数据失败")
+    } finally {
+      setIsReextracting(false)
     }
   }
 
@@ -128,6 +145,18 @@ function PaperDetail() {
                   </div>
 
                   <div className="flex shrink-0 flex-wrap items-center gap-2">
+                    {paper.pdf_path ? (
+                      <Button
+                        disabled={isReextracting || isUploading}
+                        onClick={() => void handleReextractMetadata()}
+                        title="根据 PDF 原文重新识别并更新元数据"
+                        type="button"
+                        variant="outline"
+                      >
+                        <RefreshCw className={cn(isReextracting && "animate-spin")} />
+                        {isReextracting ? "识别中..." : "重新识别"}
+                      </Button>
+                    ) : null}
                     {paper.pdf_path ? (
                       <a
                         className={buttonVariants({ variant: "outline" })}
